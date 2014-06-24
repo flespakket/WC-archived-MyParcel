@@ -5,7 +5,7 @@ Plugin URI: http://www.flespakket.nl
 Description: Export your WooCommerce orders to Flespakket (www.flespakket.nl) and print labels directly from the WooCommerce admin
 Author: Ewout Fernhout
 Author URI: http://www.wpovernight.com
-Version: 1.3.8
+Version: 1.4.1
 Text Domain: wcflespakket
 
 License: GPLv3 or later

@@ -42,7 +42,7 @@
 								<tbody>
 								<?php
 								// $verpakkingsgewicht = (isset($this->settings['verpakkingsgewicht'])) ? preg_replace("/\D/","",$this->settings['verpakkingsgewicht'])/1000 : 0;
-								$total_weight = 0; //$verpakkingsgewicht
+								$total_weight = 0; //$verpakkingsgewicht;
 								foreach ($row['bestelling'] as $product) { 
 									$total_weight += $product['total_weight'];?>
 									<tr>
@@ -63,7 +63,7 @@
 						</td>
 						<td><p><?php
 							if ( $row['landcode'] == 'NL' && ( empty($row['straat']) || empty($row['huisnummer']) ) ) { ?>
-							<span style="color:red">Deze order bevat geen geldige straatnaam- en huisnummergegevens, en kan daarom niet worden ge-exporteerd!</span>
+							<span style="color:red">Deze order bevat geen geldige straatnaam- en huisnummergegevens, en kan daarom niet worden ge-exporteerd! Waarschijnlijk is deze order geplaatst voordat de Flespakket plugin werd geactiveerd. De gegevens kunnen wel handmatig worden ingevoerd in het order scherm.</span>
 							</p>
 						</td>
 					</tr>
@@ -87,8 +87,27 @@
 					<tr>
 						<td colspan="2">
 							<table class="wcflespakket_settings_table">
+								<?php if ( $row['landcode'] == 'NL' ) { ?>
 								<tr>
-									<td>Soort zending</td>
+									<td>Aantal colli</td>
+									<td>
+										<select name="data[<?php echo $row['orderid']; ?>][colli_amount]" class="colli-amount" data-orderid="<?php echo $row['orderid']; ?>">
+											<option value="1" selected>1</option>
+											<option value="2">2</option>
+											<option value="3">3</option>
+											<option value="4">4</option>
+											<option value="5">5</option>
+											<option value="6">6</option>
+											<option value="7">7</option>
+											<option value="8">8</option>
+											<option value="9">9</option>
+											<option value="10">10</option>
+										</select>
+									</td>
+								</tr>
+								<?php } // endif?>
+								<tr>
+									<td class="collo_1_label">Soort zending</td>
 									<td>
 										<?php if (!isset($this->settings['package'])) $this->settings['package'] = 'bottle_1'; ?>
 										<select name="data[<?php echo $row['orderid']; ?>][package]">
@@ -99,10 +118,32 @@
 											<option value="bottle_12" <?php selected("bottle_12", $this->settings['package'])?>>12 flessen</option>
 											<option value="bottle_18" <?php selected("bottle_18", $this->settings['package'])?>>18 flessen</option>
 											<option value="other" <?php selected("other", $this->settings['package'])?>>anders</option>
-
 										</select>
 									</td>
 								</tr>
+								<?php
+								if ( $row['landcode'] == 'NL' ) {
+									for ($x=2; $x<=10; $x++) {
+								?>
+								<tr style="display:none">
+									<td>Soort zending <?php echo $x;?></td>
+									<td>
+										<?php if (!isset($this->settings['package'])) $this->settings['package'] = 'bottle_1'; ?>
+										<select name="data[<?php echo $row['orderid']; ?>][package_<?php echo $x;?>]" id="<?php echo $row['orderid'].'_package_'.$x;?>">
+											<option value="bottle_1" <?php selected("bottle_1", $this->settings['package'])?>>1 fles</option>
+											<option value="bottle_2" <?php selected("bottle_2", $this->settings['package'])?>>2 flessen</option>
+											<option value="bottle_3" <?php selected("bottle_3", $this->settings['package'])?>>3 flessen</option>
+											<option value="bottle_6" <?php selected("bottle_6", $this->settings['package'])?>>6 flessen</option>
+											<option value="bottle_12" <?php selected("bottle_12", $this->settings['package'])?>>12 flessen</option>
+											<option value="bottle_18" <?php selected("bottle_18", $this->settings['package'])?>>18 flessen</option>
+											<option value="other" <?php selected("other", $this->settings['package'])?>>anders</option>
+										</select>
+									</td>
+								</tr>
+								<?php
+									} //endfor
+								} // endif
+								?>
 								<tr>
 									<?php if (!isset($this->settings['email'])) $this->settings['email'] = ''; ?>
 									<td>Email adres koppelen</td>
@@ -175,6 +216,30 @@
 	jQuery(document).ready(function($){
 		$('.button-wcflespakket').click(function(){
 			$('.waiting').show();
+		});
+
+		//let the appropiate amount of 'soort zending' selects appear when 'aantal colli' is changed
+		$("select.colli-amount").change(function(){
+			var multicolli = parseInt($(this).val());
+
+			if( multicolli > 1 ) {
+				$(this).closest('tr').next('tr').find('.collo_1_label').html('Soort zending 1');
+			} else {
+				$(this).closest('tr').next('tr').find('.collo_1_label').html('Soort zending');
+			}
+
+			order_id = $(this).attr("data-orderid");
+
+			for(i=2; i<(multicolli)+1; i++){
+				var package_select = "select#"+order_id+"_package_"+(i);
+				$(package_select).closest('tr').show();//show the amount of extra 'soort zending' needed
+				// $((package_select)).addClass('required');
+			}
+			for(i=multicolli+1; i<11; i++){
+				var package_select = "select#"+order_id+"_package_"+(i);
+				$(package_select).closest('tr').hide();//hide the rest
+				// $(package_select).val(null);//and empty the field
+			}
 		});
 	});
 </script>

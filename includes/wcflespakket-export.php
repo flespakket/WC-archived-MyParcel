@@ -5,7 +5,7 @@ class WC_Flespakket_Export {
 	/**
 	 * Construct.
 	 */
-	 		
+			
 	public function __construct() {
 		add_action( 'load-edit.php', array( &$this, 'wcflespakket_action' ) ); // Export actions (popup & file export)
 		$this->settings = get_option( 'wcflespakket_settings' );
@@ -71,8 +71,8 @@ class WC_Flespakket_Export {
 				if (!isset($_POST['data'])) 
 					die('Er zijn geen orders om te exporteren!');
 
-				// stripslashes! Wordpress always slashess... http://stackoverflow.com/q/8949768/1446634
-				$post_data = json_decode(stripslashes(json_encode($_POST['data'], JSON_HEX_APOS)), true);
+				// stripslashes! Wordpress always slashes POST data, regardless of magic quotes settings... http://stackoverflow.com/q/8949768/1446634
+				$post_data = stripslashes_deep($_POST['data']);
 
 				$array = array(
 					'process'		=> isset($this->settings['process'])?1:0, // NOTE: process parameter is active, put on 0 to create a consignment without processing it
@@ -81,6 +81,7 @@ class WC_Flespakket_Export {
 
 				foreach ($post_data as $order_id => $consignment) {
 					$array['consignments'][$order_id] = array(
+						'colli_amount'	=> (isset($consignment['colli_amount'])) ? $consignment['colli_amount'] : '1',
 						'package'		=> (isset($consignment['package'])) ? $consignment['package'] : 'bottle_1', // default to bottle_1...
 						'ToAddress'		=> array(),
 						'ProductCode'	=> array(
@@ -92,7 +93,6 @@ class WC_Flespakket_Export {
 							
 						),
 						'insured_amount'	=> $consignment['verzekerdbedrag'],
-						'extra_size'		=> (isset($consignment['extragroot'])) ? '1' : '0',
 						'custom_id'			=> (isset($consignment['kenmerk'])) ? $consignment['kenmerk'] : '',
 						'comments'			=> (isset($consignment['bericht'])) ? $consignment['bericht'] : '',
 						'weight'			=> $consignment['gewicht'],
@@ -111,6 +111,14 @@ class WC_Flespakket_Export {
 							'number_addition' => $consignment['huisnummertoevoeging'],
 							'street'		  => $consignment['straat'],
 						);
+
+						if ($consignment['colli_amount'] > 1) {
+							$array['consignments'][$order_id]['MultiColli'] = array();
+							for ($x=2; $x<=$consignment['colli_amount']; $x++) {
+								$array['consignments'][$order_id]['MultiColli']['package_'.$x] = $consignment['package_'.$x];
+							}
+						}
+
 					} else {
 						$array['consignments'][$order_id]['ToAddress'] = array(
 							'name'			=> $consignment['naam'],
@@ -129,73 +137,11 @@ class WC_Flespakket_Export {
 				// ERROR LOGGING
 				if (isset($this->settings['error_logging']))
 					file_put_contents($this->log_file, date("Y-m-d H:i:s")." consignment data:\n".var_export($array['consignments'],true)."\n", FILE_APPEND);
-				//die( print_r( $array ) );
+				// die( print_r( $array ) );
 
-				$json = urlencode(json_encode($array));
-			
-				$target_site_api = 'http://www.flespakket.nl/api/';
-				$nonce = rand(0,255); // note: this should be incremented in case 2 requests occur within the same timestamp (second)
-				$timestamp = time();
-				$username = $this->settings['api_username'];
-				$api_key = $this->settings['api_key'];
+				// Send consignments to Flespakket API
+				$decode = $this->api_request( 'create-consignments', $array);
 				
-				// create GET/POST string
-				$string = implode('&', array(
-					'json=' . $json,
-					'nonce=' . $nonce,
-					'test=' . (isset( $this->settings['testmode'] ) ? '1' : '0'),
-					'timestamp=' . $timestamp,
-					'username=' . $username,
-				));
-
-				
-				
-				// ********* POST method ********* //
-
-				// create hash
-				$signature = hash_hmac('sha1', 'POST' . '&' . urlencode($string), $api_key);
-
-				// sign string
-				$string = $string . '&signature=' . $signature;
-
-				// Prepare post data
-				$opts = array('http' =>
-					array(
-						'method'  => 'POST',
-						'header'  => 'Content-type: application/x-www-form-urlencoded',
-						'content' => $string
-					)
-				);
-				$context  = stream_context_create($opts);
-
-				// request URL
-				$request = $target_site_api . 'create-consignments/';
-				
-				// ERROR LOGGING
-				if (isset($this->settings['error_logging']))
-					file_put_contents($this->log_file, date("Y-m-d H:i:s")." Post content:\n".$string."\n", FILE_APPEND);
-
-				// process request
-				$result = file_get_contents($request, false, $context);
-
-				/*
-
-				// ********* GET method ********* //
-
-				// create hash
-				$signature = hash_hmac('sha1', 'GET' . '&' . urlencode($string), $api_key);
-
-				// create final request
-				$request = $target_site_api . 'create-consignments/?' . $string . '&signature=' . $signature;
-
-				// process request
-				$result = file_get_contents($request);
-
-				*/
-
-				// decode result
-				$decode = json_decode(urldecode($result), true);
-
 				// ERROR LOGGING
 				if (isset($this->settings['error_logging']))
 					file_put_contents($this->log_file, date("Y-m-d H:i:s")." API response:\n".print_r($decode,true)."\n", FILE_APPEND);
@@ -226,7 +172,7 @@ class WC_Flespakket_Export {
 						// set status to complete
 						if ( isset($this->settings['auto_complete']) ) {
 							$order = new WC_Order( $order_id );
-							$order->update_status( 'completed', 'Order voltooid na MyParcel export' );
+							$order->update_status( 'completed', 'Order voltooid na Flespakket export' );
 						}
 
 					} else {
@@ -273,43 +219,23 @@ class WC_Flespakket_Export {
 				}
 
 				$consignment_id = str_replace('x', ',', $consignment_id_encoded);
-				$username = $this->settings['api_username'];
-				$api_key = $this->settings['api_key'];
-				$target_site_api = 'http://www.flespakket.nl/api/';
-				$timestamp = time();
-
-				// ERROR LOGGING
-				if (isset($this->settings['error_logging']))
-					file_put_contents($this->log_file, date("Y-m-d H:i:s")." consignment(s) requested: ".$consignment_id."\n", FILE_APPEND);
 
 				// retrieve pdf for the consignment (this is another api call to retrieve-pdf)
 				$array = array(
 					'consignment_id' => $consignment_id,
 					'format'		 => 'json',
 				);
-				$json = urlencode(json_encode($array));
-				$nonce = rand(0,255); // note: this should be incremented in case 2 requests occur within the same timestamp (second)
-				$string = implode('&', array(
-					'json=' . $json,
-					'nonce=' . $nonce,
-					'test=' . (isset( $this->settings['testmode'] ) ? '1' : '0'),
-					'timestamp=' . $timestamp,
-					'username=' . $username,
-				));
-				$signature = hash_hmac('sha1', 'GET' . '&' . urlencode($string), $api_key);
+
+				// ERROR LOGGING
+				if (isset($this->settings['error_logging']))
+					file_put_contents($this->log_file, date("Y-m-d H:i:s")." consignment(s) requested: ".$consignment_id."\n", FILE_APPEND);
+
+				// Request labels from Flespakket API
+				$decode = $this->api_request( 'retrieve-pdf', $array);
 				
-				// create final request
-				$request = $target_site_api . 'retrieve-pdf/?' . $string . '&signature=' . $signature;
-			
-				// process request
-				$result = file_get_contents($request);
-			
-				// decode result
-				$decode = json_decode($result);
-				
-				if (isset($decode->consignment_pdf)) {
-					$pdf_data = $decode->consignment_pdf;
-					$consigments_tracktrace = array_combine( explode(',',$decode->consignment_id), explode(',',$decode->tracktrace) );
+				if (isset($decode['consignment_pdf'])) {
+					$pdf_data = $decode['consignment_pdf'];
+					$consigments_tracktrace = array_combine( explode(',',$decode['consignment_id']), explode(',',$decode['tracktrace']) );
 					
 					// track & trace fallback
 					foreach ( $consignment_list as $order_id => $consignment_id ) {
@@ -322,13 +248,15 @@ class WC_Flespakket_Export {
 						}
 					}
 					
-					unset($decode->consignment_pdf);
+					unset($decode['consignment_pdf']);
 					
 					// ERROR LOGGING
 					if (isset($this->settings['error_logging'])) {
 						file_put_contents($this->log_file, date("Y-m-d H:i:s")." PDF data received\n", FILE_APPEND);
 						file_put_contents($this->log_file, print_r($orders_tracktrace,true)."\n", FILE_APPEND);
 					}
+
+					do_action( 'wcflespakket_before_label_print', $consignment_list );
 
 					$filename  = 'Flespakket';
 					$filename .= '-' . date('Y-m-d') . '.pdf';
@@ -353,8 +281,8 @@ class WC_Flespakket_Export {
 
 					// stream data
 					echo urldecode($pdf_data);
-				} elseif (isset($decode->error)) {
-					echo 'Error: ' . $decode->error;
+				} elseif (isset($decode['error'])) {
+					echo 'Error: ' . $decode['error'];
 					
 					if (isset($this->settings['error_logging']))
 						file_put_contents($this->log_file, date("Y-m-d H:i:s")." server response:\n".print_r($decode,true)."\n", FILE_APPEND);
@@ -370,6 +298,61 @@ class WC_Flespakket_Export {
 		}
 			
 		}
+	}
+
+	public function api_request( $request_type, $data, $method = 'POST' ) {
+		// collect API credentials/settings
+		$target_site_api = 'http://www.flespakket.nl/api/';
+		$username = $this->settings['api_username'];
+		$api_key = $this->settings['api_key'];
+		$timestamp = time();
+		$nonce = rand(0,255); // note: this should be incremented in case 2 requests occur within the same timestamp (second)
+
+		// JSON encode data
+		$json = urlencode(json_encode($data));
+
+		// create GET/POST string (keys in alphabetical order)
+		$string = implode('&', array(
+			'json=' . $json,
+			'nonce=' . $nonce,
+			'test=' . (isset( $this->settings['testmode'] ) ? '1' : '0'),
+			'timestamp=' . $timestamp,
+			'username=' . $username,
+		));	
+
+		// ERROR LOGGING
+		if (isset($this->settings['error_logging']))
+			file_put_contents($this->log_file, date("Y-m-d H:i:s")." Post content:\n".$string."\n", FILE_APPEND);
+
+		// create hash
+		$signature = hash_hmac('sha1', $method . '&' . urlencode($string), $api_key);
+
+		if($method == 'POST')
+		{
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $target_site_api . $request_type . '/');
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $string . '&signature=' . $signature);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+			$result = curl_exec($ch);
+			curl_close ($ch);
+		}
+		else // GET
+		{
+			// depricated, long urls for batch processing gives issues
+			$request = $target_site_api . $request_type . '/?' . $string . '&signature=' . $signature;
+			$result = file_get_contents($request);
+		}
+
+		// decode result
+		$decode = json_decode($result, true);
+		
+		// ERROR LOGGING
+		if (isset($this->settings['error_logging']))
+			file_put_contents($this->log_file, date("Y-m-d H:i:s")." API response:\n".print_r($decode,true)."\n", FILE_APPEND);
+
+		return $decode;
 	}
 
 	/**
@@ -518,7 +501,7 @@ Hieronder kunt u de labels in PDF formaat downloaden.</p>
 Uw pakket met daarop het verzendetiket dient binnen 9 werkdagen na het aanmaken bij PostNL binnen te zijn. Daarna verliest het zijn geldigheid.
 </body></html>
 <?php
-	 	}
+		}
 	}
 
 }

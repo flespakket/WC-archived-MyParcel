@@ -53,8 +53,8 @@ class WC_Flespakket_Settings {
 	
 		// Section.
 		add_settings_section(
-			'api_credentials',
-			__( 'Flespakket API login-gegevens', 'wcflespakket' ),
+			'general',
+			__( 'Algemene instellingen', 'wcflespakket' ),
 			array( &$this, 'section_options_callback' ),
 			$option
 		);
@@ -64,7 +64,7 @@ class WC_Flespakket_Settings {
 			__( 'Gebruikersnaam', 'wcflespakket' ),
 			array( &$this, 'text_element_callback' ),
 			$option,
-			'api_credentials',
+			'general',
 			array(
 				'menu'			=> $option,
 				'id'			=> 'api_username',
@@ -78,7 +78,7 @@ class WC_Flespakket_Settings {
 			__( 'API key', 'wcflespakket' ),
 			array( &$this, 'text_element_callback' ),
 			$option,
-			'api_credentials',
+			'general',
 			array(
 				'menu'			=> $option,
 				'id'			=> 'api_key',
@@ -87,42 +87,12 @@ class WC_Flespakket_Settings {
 			)
 		);
 
-		// Section.
-		add_settings_section(
-			'email',
-			__( 'WooCommerce email instellingen', 'wcflespakket' ),
-			array( &$this, 'section_options_callback' ),
-			$option
-		);
-
-		add_settings_field(
-			'email_tracktrace',
-			__( 'Email track&trace code', 'wcflespakket' ),
-			array( &$this, 'checkbox_element_callback' ),
-			$option,
-			'email',
-			array(
-				'menu'			=> $option,
-				'id'			=> 'email_tracktrace',
-				'description'	=> __( 'De track&trace code (wanneer beschikbaar) wordt automatisch toegevoegd aan de orderbevestingsmail naar de klant.<br/><strong>Let op!</strong> Wanneer u deze optie selecteert, dient u erop te letten dat u geen track&trace mail vanuit Flespakket verstuurt.', 'wcflespakket' )
-			)
-		);
-
-		
-		// Section.
-		add_settings_section(
-			'default_values',
-			__( 'Flespakket standaard export instellingen', 'wcflespakket' ),
-			array( &$this, 'section_options_callback' ),
-			$option
-		);
-
 		add_settings_field(
 			'download_display',
 			__( 'Labelweergave', 'wpo_wcpdf' ),
 			array( &$this, 'radio_element_callback' ),
 			$option,
-			'default_values',
+			'general',
 			array(
 				'menu'			=> $option,
 				'id'			=> 'download_display',
@@ -138,7 +108,7 @@ class WC_Flespakket_Settings {
 			__( 'Zet orders automatisch op voltooid na (succesvolle) Flespakket export', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
-			'default_values',
+			'general',
 			array(
 				'menu'			=> $option,
 				'id'			=> 'auto_complete',
@@ -151,7 +121,7 @@ class WC_Flespakket_Settings {
 			__( 'Verwerk labels direct', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
-			'default_values',
+			'general',
 			array(
 				'menu'			=> $option,
 				'id'			=> 'process',
@@ -159,7 +129,81 @@ class WC_Flespakket_Settings {
 			)
 		);
 
-		// Gewicht
+		add_settings_field(
+			'email_tracktrace',
+			__( 'Email track&trace code', 'wcflespakket' ),
+			array( &$this, 'checkbox_element_callback' ),
+			$option,
+			'general',
+			array(
+				'menu'			=> $option,
+				'id'			=> 'email_tracktrace',
+				'description'	=> __( 'De track&trace code (wanneer beschikbaar) wordt automatisch toegevoegd aan de orderbevestingsmail naar de klant.<br/><strong>Let op!</strong> Wanneer u deze optie selecteert, dient u erop te letten dat u geen track&trace mail vanuit Flespakket verstuurt.', 'wcflespakket' )
+			)
+		);
+
+		add_settings_field(
+			'myaccount_tracktrace',
+			__( 'Laat track&trace code op de <em>Mijn Account</em> pagina zien.', 'wcflespakket' ),
+			array( &$this, 'checkbox_element_callback' ),
+			$option,
+			'general',
+			array(
+				'menu'			=> $option,
+				'id'			=> 'myaccount_tracktrace',
+			)
+		);
+
+		add_settings_field(
+			'pakjegemak',
+			__( 'Voeg PakjeGemak toe aan de WooCommerce checkout', 'wcflespakket' ),
+			array( &$this, 'checkbox_element_callback' ),
+			$option,
+			'general',
+			array(
+				'menu'			=> $option,
+				'id'			=> 'pakjegemak',
+				'description'	=> __( 'Steeds meer consumenten kiezen ervoor hun pakket af te halen bij een afhaallocatie in plaats van deze thuis te laten bezorgen. Deze service van PostNL wordt PakjeGemak genoemd. U kunt dit ook aanbieden aan uw klanten.<br/><strong>Let op!</strong> Deze service is niet geoptimaliseerd voor mobiele browsers en werkt daar ook niet zo goed. U zou er voor kunnen kiezen om de pakjegemak knop door middel van CSS te verbergen voor mobiele browsers.', 'wcflespakket' )
+			)
+		);
+		
+		add_settings_field(
+			'pakjegemak_description',
+			__( 'Omschrijving van PakjeGemak op de checkout pagina', 'wcflespakket' ),
+			array( &$this, 'textarea_element_callback' ),
+			$option,
+			'general',
+			array(
+				'menu'			=> $option,
+				'id'			=> 'pakjegemak_description',
+				'width'			=> '50',
+				'height'		=> '4',
+				'default'		=> 'Wilt u uw bestelling liever laten versturen naar een afhaallocatie van PostNL? Maak dan gebruik van de PakjeGemak service.',
+			)
+		);
+
+		add_settings_field(
+			'pakjegemak_button',
+			__( 'Tekst op de pakjegemak knop', 'wcflespakket' ),
+			array( &$this, 'text_element_callback' ),
+			$option,
+			'general',
+			array(
+				'menu'			=> $option,
+				'id'			=> 'pakjegemak_button',
+				'size'			=> '50',
+				'default'		=> 'PakjeGemak afhaallocatie kiezen',
+			)
+		);
+
+		// Section.
+		add_settings_section(
+			'default_values',
+			__( 'Standaard export instellingen', 'wcflespakket' ),
+			array( &$this, 'section_options_callback' ),
+			$option
+		);
+
 		add_settings_field(
 			'package',
 			__( 'Standaard verpakking', 'wcflespakket' ),
@@ -222,7 +266,7 @@ class WC_Flespakket_Settings {
 		
 		add_settings_field(
 			'huisadres',
-			__( 'Niet bij buren bezorgen (+ &euro; 0.23)', 'wcflespakket' ),
+			__( 'Niet bij buren bezorgen (+ &euro;0.23)', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
 			'default_values',
@@ -234,7 +278,7 @@ class WC_Flespakket_Settings {
 		
 		add_settings_field(
 			'handtekening',
-			__( 'Handtekening voor ontvangst (+ &euro; 0.30)', 'wcflespakket' ),
+			__( 'Handtekening voor ontvangst (+ &euro;0.30)', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
 			'default_values',
@@ -247,7 +291,7 @@ class WC_Flespakket_Settings {
 		
 		add_settings_field(
 			'huishand',
-			__( 'Niet bij buren bezorgen + Handtekening voor ontvangst (+ &euro; 0.37)', 'wcflespakket' ),
+			__( 'Niet bij buren bezorgen + Handtekening voor ontvangst (+ &euro;0.37)', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
 			'default_values',
@@ -260,7 +304,7 @@ class WC_Flespakket_Settings {
 		
 		// add_settings_field(
 		// 	'huishandverzekerd',
-		// 	__( 'Niet bij buren bezorgen + Handtekening voor ontvangst + verzekerd tot &euro; 50 (+ &euro; 0.50)', 'wcflespakket' ),
+		// 	__( 'Niet bij buren bezorgen + Handtekening voor ontvangst + verzekerd tot &euro;50 (+ &euro;0.50)', 'wcflespakket' ),
 		// 	array( &$this, 'checkbox_element_callback' ),
 		// 	$option,
 		// 	'default_values',
@@ -286,7 +330,7 @@ class WC_Flespakket_Settings {
 		
 		add_settings_field(
 			'verzekerd',
-			__( 'Verhoogd aansprakelijk (+ &euro; 1.50 per 500 euro verzekerd)', 'wcflespakket' ),
+			__( 'Verhoogd aansprakelijk (+ &euro;1.50 per 500 euro verzekerd)', 'wcflespakket' ),
 			array( &$this, 'checkbox_element_callback' ),
 			$option,
 			'default_values',
@@ -320,7 +364,7 @@ class WC_Flespakket_Settings {
 			array(
 				'menu'			=> $option,
 				'id'			=> 'bericht',
-				'description'	=> __( "Met deze optie kunt u een optioneel bericht aan de zending toevoegen. Deze kunt u later terug lezen in uw overzicht zendingen. Deze tekst komt niet terug op het etiket, maar is door de klant wel terug te vinden op de track&trace pagina van PostNL onder 'Referentie'", 'wcflespakket' ),
+				'description'	=> __( "Met deze optie kunt u een optioneel bericht aan de zending toevoegen. Deze kunt u later terug lezen in uw overzicht zendingen. Deze tekst komt niet terug op het etiket, maar is door de klant wel terug te vinden op de track&trace pagina van PostNL onder 'Referentie'. Gebruik de code <strong>[ORDER_NR]</strong> om het WooCommerce ordernummer automatisch in te laten vullen.", 'wcflespakket' ),
 			)
 		);
 
@@ -333,26 +377,24 @@ class WC_Flespakket_Settings {
 			array(
 				'menu'			=> $option,
 				'id'			=> 'kenmerk',
-				'description'	=> __( "Met deze optie kunt u een kenmerk aan de zending toevoegen. Deze wordt linksboven op het label geprint en hierop kan later in het overzicht zendingen gezocht of geordend worden.", 'wcflespakket' ),
+				'description'	=> __( "Met deze optie kunt u een kenmerk aan de zending toevoegen. Deze wordt linksboven op het label geprint en hierop kan later in het overzicht zendingen gezocht of geordend worden. Ook hier kunt u de code <strong>[ORDER_NR]</strong> gebruiken.", 'wcflespakket' ),
 			)
 		);
 
-		/*
-		// Standaard verpakkingsgewicht
-		add_settings_field(
-			'verpakkingsgewicht',
-			__( 'Standaard verpakkingsgewicht (gram)', 'wcflespakket' ),
-			array( &$this, 'text_element_callback' ),
-			$option,
-			'default_values',
-			array(
-				'menu'			=> $option,
-				'id'			=> 'verpakkingsgewicht',
-				'size'			=> '5',
-				'description'	=> __( 'Gewicht van uw standaard verpakking, afgerond op hele grammen.', 'wcflespakket' ),
-			)
-		);
-		*/
+		// // Standaard verpakkingsgewicht
+		// add_settings_field(
+		// 	'verpakkingsgewicht',
+		// 	__( 'Standaard verpakkingsgewicht (gram)', 'wcflespakket' ),
+		// 	array( &$this, 'text_element_callback' ),
+		// 	$option,
+		// 	'default_values',
+		// 	array(
+		// 		'menu'			=> $option,
+		// 		'id'			=> 'verpakkingsgewicht',
+		// 		'size'			=> '5',
+		// 		'description'	=> __( 'Gewicht van uw standaard verpakking, afgerond op hele grammen.', 'wcflespakket' ),
+		// 	)
+		// );
 
 		// Section.
 		add_settings_section(
@@ -449,6 +491,30 @@ class WC_Flespakket_Settings {
 	
 		echo $html;
 	}
+
+	public function textarea_element_callback( $args ) {
+		$menu = $args['menu'];
+		$id = $args['id'];
+		$width = $args['width'];
+		$height = $args['height'];
+	
+		$options = get_option( $menu );
+	
+		if ( isset( $options[$id] ) ) {
+			$current = $options[$id];
+		} else {
+			$current = isset( $args['default'] ) ? $args['default'] : '';
+		}
+	
+		$html = sprintf( '<textarea id="%1$s" name="%2$s[%1$s]" cols="%4$s" rows="%5$s"/>%3$s</textarea>', $id, $menu, $current, $width, $height );
+	
+		// Displays option description.
+		if ( isset( $args['description'] ) ) {
+			$html .= sprintf( '<p class="description">%s</p>', $args['description'] );
+		}
+	
+		echo $html;
+	}
 	
 	/**
 	 * Checkbox field fallback.
@@ -501,6 +567,7 @@ class WC_Flespakket_Settings {
 		}
 	
 		$html = sprintf( '<select id="%1$s" name="%2$s[%1$s]">', $id, $menu );
+		
 		foreach ( $args['options'] as $key => $label ) {
 			$html .= sprintf( '<option value="%s"%s>%s</option>', $key, selected( $current, $key, false ), $label );
 		}
