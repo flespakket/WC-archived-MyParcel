@@ -214,13 +214,15 @@ class WC_Flespakket_Settings {
 				'menu'			=> $option,
 				'id'			=> 'package',
 				'options'		=> array(
-					'bottle_1'	=> '1 fles',
-					'bottle_2'	=> '2 flessen',
-					'bottle_3'	=> '3 flessen',
-					'bottle_6'	=> '6 flessen',
-					'bottle_12'	=> '12 flessen',
-					'bottle_18'	=> '18 flessen',
-					'other'		=> 'anders',
+					'bottle_1'		=> '1 fles',
+					'bottle_2'		=> '2 flessen',
+					'bottle_3'		=> '3 flessen',
+					'bottle_6'		=> '6 flessen',
+					'bottle_9'		=> '9 flessen',
+					'bottle_12'		=> '12 flessen',
+					'bottle_18'		=> '18 flessen',
+					'bottle_magnum'	=> 'Magnum fles',
+					'other'			=> 'anders',
 				)
 			)
 		);

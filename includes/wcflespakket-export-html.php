@@ -134,8 +134,10 @@
 											<option value="bottle_2" <?php selected("bottle_2", $this->settings['package'])?>>2 flessen</option>
 											<option value="bottle_3" <?php selected("bottle_3", $this->settings['package'])?>>3 flessen</option>
 											<option value="bottle_6" <?php selected("bottle_6", $this->settings['package'])?>>6 flessen</option>
+											<option value="bottle_9" <?php selected("bottle_9", $this->settings['package'])?>>9 flessen</option>
 											<option value="bottle_12" <?php selected("bottle_12", $this->settings['package'])?>>12 flessen</option>
 											<option value="bottle_18" <?php selected("bottle_18", $this->settings['package'])?>>18 flessen</option>
+											<option value="bottle_magnum" <?php selected("bottle_magnum", $this->settings['package'])?>>Magnum fles</option>
 											<option value="other" <?php selected("other", $this->settings['package'])?>>anders</option>
 										</select>
 									</td>
