@@ -1,3 +1,5 @@
+# The WooCommerce plugin is archived, look at the following link for the latest version of the MyParcel plugin. https://github.com/myparcelnl
+
 # WooCommerce Flespakket
 Welcome to the WooCommerce Flespakket repository on GitHub. Here you can browse the source, look at open issues and keep track of development.
 
